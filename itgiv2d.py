@@ -15,9 +15,9 @@ from mlsarray.gensolver import gensolver,save_data
 import h5py as h5
 
 filename='out768_alt.h5'
-Npx,Npy=768,512
+Npx,Npy=1024,1024
 t0,t1=0.0,10000.0
-dtstep,dtshow=0.1,0.1
+dtstep,dtshow=1.0,1.0
 wecontinue=False
 Nx,Ny=2*int(np.floor(Npx/3)),2*int(np.floor(Npy/3))
 Lx,Ly=100,150
@@ -129,7 +129,7 @@ def rhs(t,y):
     return dzkdt.view(dtype=float)
 
 fsave=[save_last, save_fluxes, save_zonal, save_real_fields]
-dtsave=[0.1,1.0,1.0,1.0]
+dtsave=[1.0,10.0,10.0,10.0]
 r=gensolver('cupy_ivp.DOP853',rhs,t,zk.view(dtype=float),t1,fsave=fsave,fshow=fshow,dtstep=dtstep,dtshow=dtshow,dtsave=dtsave,rtol=rtol,atol=atol)
 r.run()
 fl.close()
