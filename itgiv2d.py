@@ -14,7 +14,7 @@ from mlsarray.mlsarray import mlsarray,slicelist,init_kspace_grid,rfft2
 from mlsarray.gensolver import gensolver,save_data
 import h5py as h5
 
-filename='out768_alt.h5'
+filename='out.h5'
 Npx,Npy=1024,1024
 t0,t1=0.0,10000.0
 dtstep,dtshow=1.0,1.0
