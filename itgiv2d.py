@@ -10,8 +10,8 @@ import numpy as np
 import cupy as xp
 import gc
 import sys
-from .mlsarray import mlsarray,slicelist,init_kspace_grid,rfft2
-from gensolver import gensolver,save_data
+from mlsarray.mlsarray import mlsarray,slicelist,init_kspace_grid,rfft2
+from mlsarray.gensolver import gensolver,save_data
 import h5py as h5
 
 filename='out768_alt.h5'
