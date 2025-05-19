@@ -16,8 +16,7 @@ import h5py as h5
 
 filename='out.h5'
 Npx,Npy=1024,1024
-t0,t1=0.0,10000.0
-dtstep,dtshow=1.0,1.0
+t0,t1=0.0,300.0
 wecontinue=False
 Nx,Ny=2*int(np.floor(Npx/3)),2*int(np.floor(Npy/3))
 Lx,Ly=100,100
@@ -42,7 +41,8 @@ del lkx,lky; gc.collect()
 chi=0.1
 a=9.0/40.0
 b=67.0/160.0
-kapt=0.36
+kapt=3.5
+nuH,nuL=5e-4,0.0
 
 def irft(uk):
     utmp=mlsarray(Npx,Npy)
@@ -114,22 +114,29 @@ def rhs(t,y):
     dzkdt=xp.zeros_like(zk)
     Phik,Tk=zk[:Nk],zk[Nk:]
     dPhikdt,dTkdt=dzkdt[:Nk],dzkdt[Nk:]
+    
     dxphi=irft(1j*kx*Phik)
     dyphi=irft(1j*ky*Phik)
     dxT=irft(1j*kx*Tk)
     dyT=irft(1j*ky*Tk)
     sigk=xp.sign(ky)
-    nOmg=irft((sigk+ksqr)*Phik)
-    dPhikdt[:]=1j*ky*((1+kapt*ksqr)*Phik+Tk)-chi*ksqr**2*(a*Phik-b*Tk) # or is it (kx**4+ky**4) ?
-    dTkdt[:]=-1j*ky*kapt*Phik-chi*ksqr*Tk
-    dPhikdt[:]+=(1j*kx*rft(dyphi*nOmg)-1j*ky*rft(dxphi*nOmg))
-    dPhikdt[:]+= kx**2*rft(dxphi*dyT)-ky**2*rft(dyphi*dxT)+kx*ky*rft(dyphi*dyT-dxphi*dxT)
+    W=irft((sigk+ksqr)*Phik)
+    
+    dPhikdt[:]=1j*ky*((1+kapt*ksqr)*Phik+Tk)-chi*ksqr**2*(a*Phik-b*Tk)*sigk
+    dPhikdt[:]+=(1j*kx*rft(dyphi*W)-1j*ky*rft(dxphi*W))
+#    dPhikdt[:]+= kx**2*rft(dxphi*dyT)-ky**2*rft(dyphi*dxT)+kx*ky*rft(dyphi*dyT-dxphi*dxT)
     dPhikdt[:]/=(sigk+ksqr)
+    dPhikdt[:]+=-sigk*(nuH*ksqr**2*Phik+nuL/ksqr**2*Phik)
+
+    dTkdt[:]=-1j*ky*kapt*Phik-chi*ksqr*Tk*sigk
     dTkdt[:]+=rft(dyphi*dxT-dxphi*dyT)
+    dTkdt[:]+=-sigk*(nuH*ksqr**2*Tk+nuL/ksqr**2*Tk)
+    
     return dzkdt.view(dtype=float)
 
 fsave=[save_last, save_fluxes, save_zonal, save_real_fields]
-dtsave=[1.0,10.0,10.0,10.0]
+dtsave=[0.1,1.0,1.0,1.0]
+dtstep,dtshow=0.1,0.1
 r=gensolver('cupy_ivp.DOP853',rhs,t,zk.view(dtype=float),t1,fsave=fsave,fshow=fshow,dtstep=dtstep,dtshow=dtshow,dtsave=dtsave,rtol=rtol,atol=atol)
 r.run()
 fl.close()
