@@ -10,6 +10,7 @@ import numpy as np
 import cupy as xp
 import gc
 import sys
+import os
 from mlsarray.mlsarray import mlsarray,slicelist,init_kspace_grid,rfft2
 from mlsarray.gensolver import gensolver,save_data
 import h5py as h5
@@ -44,6 +45,21 @@ b=67.0/160.0
 kapt=3.5
 nuH,nuL=5e-4,0.0
 
+if(wecontinue):
+    fl=h5.File(filename,'r+',libver='latest')
+    fl.swmr_mode = True
+    zk=fl['last/zk'][()]
+    t=fl['last/t'][()]
+else:
+    if os.path.exists(filename):
+        os.remove(filename)
+    fl=h5.File(filename,'w',libver='latest')
+    fl.swmr_mode = True
+    t=t0
+    save_data(fl,'data',ext_flag=False,kx=kx.get(),ky=ky.get())
+    save_data(fl,'params',ext_flag=False,kapt=kapt,chi=chi,a=a,b=b,Lx=Lx,Ly=Ly)
+    save_data(fl,'last',ext_flag=False,zk=zk.get(),t=t)
+
 def irft(uk):
     utmp=mlsarray(Npx,Npy)
     utmp[sl]=uk
@@ -55,22 +71,9 @@ def rft(u):
     uk=rfft2(u,norm='forward',overwrite_x=True).view(type=mlsarray)
     return xp.hstack(uk[sl])
 
-if(wecontinue):
-    fl=h5.File(filename,'r+',libver='latest')
-    fl.swmr_mode = True
-    zk=fl['last/zk'][()]
-    t=fl['last/t'][()]
-else:
-    fl=h5.File(filename,'w',libver='latest')
-    fl.swmr_mode = True
-    t=t0
-    save_data(fl,'data',ext_flag=False,kx=kx.get(),ky=ky.get())
-    save_data(fl,'params',ext_flag=False,kapt=kapt,chi=chi,a=a,b=b,Lx=Lx,Ly=Ly)
-    save_data(fl,'last',ext_flag=False,zk=zk.get(),t=t)
-
 def save_last(t,y):
     zk=y.view(dtype=complex)
-    save_data(fl,'last',ext_flag=False,zk=zk.get(),t=t.get())
+    save_data(fl,'last',ext_flag=False,zk=zk.get(),t=t)
 
 def save_real_fields(t,y):
     zk=y.view(dtype=complex)
@@ -78,7 +81,7 @@ def save_real_fields(t,y):
     Om=irft(-ksqr*Phik)
     Tk=zk[Nk:]
     T=irft(Tk)
-    save_data(fl,'fields',ext_flag=True,Om=Om.get(),T=T.get(),t=t.get())
+    save_data(fl,'fields',ext_flag=True,Om=Om.get(),T=T.get(),t=t)
 
 def save_fluxes(t,y):
     zk=y.view(dtype=complex)
@@ -89,7 +92,7 @@ def save_fluxes(t,y):
     T=irft(Tk)
     Q=np.mean(-dyphi*T,1)
     Pi=np.mean(-dyphi*Om,1)
-    save_data(fl,'fluxes',ext_flag=True,Q=Q.get(),Pi=Pi.get(),t=t.get())
+    save_data(fl,'fluxes',ext_flag=True,Q=Q.get(),Pi=Pi.get(),t=t)
 
 def save_zonal(t,y):
     zk=y.view(dtype=complex)
@@ -98,7 +101,7 @@ def save_zonal(t,y):
     vy=irft(-1j*kx*Phik)
     Om=irft(-ksqr*Phik)
     T=irft(Tk)
-    save_data(fl,'fields/zonal/',ext_flag=True,vbar=xp.mean(vy,1).get(),ombar=xp.mean(Om,1).get(),Tbar=xp.mean(T,1).get(),t=t.get())
+    save_data(fl,'fields/zonal/',ext_flag=True,vbar=xp.mean(vy,1).get(),ombar=xp.mean(Om,1).get(),Tbar=xp.mean(T,1).get(),t=t)
 
 def fshow(t,y):
     zk=y.view(dtype=complex)
