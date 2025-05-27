@@ -17,7 +17,7 @@ import h5py as h5
 
 filename='out.h5'
 Npx,Npy=1024,1024
-t0,t1=0.0,300.0
+t0,t1=0.0,1000.0
 wecontinue=False
 Nx,Ny=2*int(np.floor(Npx/3)),2*int(np.floor(Npy/3))
 Lx,Ly=100,100
@@ -42,8 +42,8 @@ del lkx,lky; gc.collect()
 chi=0.1
 a=9.0/40.0
 b=67.0/160.0
-kapt=3.5
-nuH,nuL=5e-4,0.0
+kapt=0.8
+nuH,nuL=0,0
 
 if(wecontinue):
     fl=h5.File(filename,'r+',libver='latest')
@@ -57,7 +57,7 @@ else:
     fl.swmr_mode = True
     t=t0
     save_data(fl,'data',ext_flag=False,kx=kx.get(),ky=ky.get())
-    save_data(fl,'params',ext_flag=False,kapt=kapt,chi=chi,a=a,b=b,Lx=Lx,Ly=Ly)
+    save_data(fl,'params',ext_flag=False,kapt=kapt,chi=chi,a=a,b=b,Lx=Lx,Ly=Ly,nuH=nuH,nuL=nuL)
     save_data(fl,'last',ext_flag=False,zk=zk.get(),t=t)
 
 def irft(uk):
@@ -127,7 +127,7 @@ def rhs(t,y):
     
     dPhikdt[:]=1j*ky*((1+kapt*ksqr)*Phik+Tk)-chi*ksqr**2*(a*Phik-b*Tk)*sigk
     dPhikdt[:]+=(1j*kx*rft(dyphi*W)-1j*ky*rft(dxphi*W))
-#    dPhikdt[:]+= kx**2*rft(dxphi*dyT)-ky**2*rft(dyphi*dxT)+kx*ky*rft(dyphi*dyT-dxphi*dxT)
+    dPhikdt[:]+= kx**2*rft(dxphi*dyT)-ky**2*rft(dyphi*dxT)+kx*ky*rft(dyphi*dyT-dxphi*dxT)
     dPhikdt[:]/=(sigk+ksqr)
     dPhikdt[:]+=-sigk*(nuH*ksqr**2*Phik+nuL/ksqr**2*Phik)
 
@@ -140,6 +140,6 @@ def rhs(t,y):
 fsave=[save_last, save_fluxes, save_zonal, save_real_fields]
 dtsave=[0.1,1.0,1.0,1.0]
 dtstep,dtshow=0.1,0.1
-r=gensolver('cupy_ivp.DOP853',rhs,t,zk.view(dtype=float),t1,fsave=fsave,fshow=fshow,dtstep=dtstep,dtshow=dtshow,dtsave=dtsave,rtol=rtol,atol=atol)
+r=gensolver('cupy_ivp.DOP853',rhs,t,zk.view(dtype=float),t1,fsave=fsave,fshow=fshow,dtstep=dtstep,dtshow=dtshow,dtsave=dtsave,dense=True,rtol=rtol,atol=atol)
 r.run()
 fl.close()
